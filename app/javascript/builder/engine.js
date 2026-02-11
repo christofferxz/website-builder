@@ -6,11 +6,10 @@ export class BuilderEngine {
     this.canvasEl = canvasEl;
     this.document = document;
     this.nodeEls = new Map();
-    this.dragState = null;
   };
 
   render() {
-    this.canvasEl.innerHTML = " ";
+    this.canvasEl.innerHTML = "";
     this.nodeEls.clear();
 
     this.document.nodes.forEach((node) => {
@@ -26,40 +25,33 @@ export class BuilderEngine {
     return this.document.nodes.find(n => String(n.id) === String(nodeId));
   };
 
-  startDrag(nodeId, e) {
+  patchNodeLayout(nodeId, patch) {
     const node = this.findNode(nodeId);
     if (!node) return;
 
-    this.dragState = {
-      nodeId: String(nodeId),
-      startMouse: { x: e.clientX, y: e.clientY },
-      startLayout: { ...node.layout },
-    };
+    // (start) mudar isso para outro lugar
+    // adicionar validacoes
+    const minWidth = 10;
+    const minHeight = 10;
 
-    window.addEventListener("pointermove", this.onDragMove);
-    window.addEventListener("pointerup", this.onDragEnd, { once: true });
-  };
+    if (patch.x != null) node.layout.x = patch.x;
+    if (patch.y != null) node.layout.y = patch.y;
 
-  onDragMove = (e) => {
-    if (!this.dragState) return;
+    if (patch.width != null)
+      node.layout.width = Math.max(minWidth, patch.width);
 
-    const { nodeId, startMouse, startLayout } = this.dragState;
-    const dx = e.clientX - startMouse.x;
-    const dy = e.clientY - startMouse.y;
+    if (patch.height != null)
+      node.layout.height = Math.max(minHeight, patch.height);
+    // (end)
 
-    const node = this.findNode(nodeId);
-    node.layout.x = startLayout.x + dx;
-    node.layout.y = startLayout.y + dy;
+    Object.assign(node.layout, patch);
 
-    const el = this.nodeEls.get(nodeId);
+    const el = this.nodeEls.get(String(nodeId));
     if (el) {
-      el.style.left = `${node.layout.x}px`;
-      el.style.top  = `${node.layout.y}px`;
-    }
-  };
-
-  onDragEnd = () => {
-    window.removeEventListener("pointermove", this.onDragMove);
-    this.dragState = null;
-  };
+      if (patch.x != null) el.style.left = `${node.layout.x}px`
+      if (patch.y != null) el.style.top  = `${node.layout.y}px`
+      if (patch.height != null) el.style.height = `${node.layout.height}px`
+      if (patch.width != null) el.style.width  = `${node.layout.width}px`
+    };
+  }
 };
