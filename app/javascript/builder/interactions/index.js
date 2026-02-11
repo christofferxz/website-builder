@@ -6,7 +6,7 @@ export function attachDrag(el, nodeId, engine) {
     event.preventDefault();
     
     const node = engine.findNode(nodeId);
-    if (!node) return console.log('[attachDrag] Node not found...');
+    if (!node) return;
 
     const startMouse = { x: event.clientX, y: event.clientY};
 
@@ -16,4 +16,12 @@ export function attachDrag(el, nodeId, engine) {
       move(node, startMouse, engine);
     };
   });
-}
+;}
+
+export function attachContext(el, nodeId, engine) {
+  el.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+
+    engine.triggerContext(nodeId, event);
+  });
+};

@@ -1,11 +1,14 @@
-import { attachDrag } from "./interactions/index.js";
+import { attachContext, attachDrag } from "./interactions/index.js";
 import { renderComponent } from "./renderers/index.js"
 
 export class BuilderEngine {
-  constructor(canvasEl, document) {
+  constructor(canvasEl, document, callbacks = {}) {
     this.canvasEl = canvasEl;
     this.document = document;
     this.nodeEls = new Map();
+
+    // callbacks
+    this.onContext = callbacks.onContext;
   };
 
   init() {
@@ -22,15 +25,34 @@ export class BuilderEngine {
     this.nodeEls.set(String(node.id), el);
 
     attachDrag(el, String(node.id), this);
+    attachContext(el, String(node.id), this);
+  };
+
+  findNodeElement(nodeId) {
+    const element = this.canvasEl.querySelector(`[data-node-id="${nodeId}"]`);
+
+    if (!element) {
+      return console.log('[error#findNodeElement => Node element not found...');
+    } else {
+      return element;
+    };
   };
 
   findNode(nodeId) {
-    return this.document.nodes.find(n => String(n.id) === String(nodeId));
+    const node = this.document.nodes.find(n => String(n.id) === String(nodeId));
+
+    if (!node) {
+      return console.log('[error#findNode] => Node not found...');
+    } else {
+      return node;
+    };
   };
 
   patchNodeLayout(nodeId, patch) {
     const node = this.findNode(nodeId);
     if (!node) return;
+
+    Object.assign(node.layout, patch);
 
     // (start) mudar isso para outro lugar
     // adicionar validacoes
@@ -47,22 +69,19 @@ export class BuilderEngine {
       node.layout.height = Math.max(minHeight, patch.height);
     // (end)
 
-    Object.assign(node.layout, patch);
-
     const el = this.nodeEls.get(String(nodeId));
-    if (el) {
-      if (patch.x != null) el.style.left = `${node.layout.x}px`
-      if (patch.y != null) el.style.top  = `${node.layout.y}px`
-      if (patch.height != null) el.style.height = `${node.layout.height}px`
-      if (patch.width != null) el.style.width  = `${node.layout.width}px`
-    };
+    if (!el) return console.log("[error#patchNodeLayout] => Element not found...");
+
+    if (patch.x != null) el.style.left = `${node.layout.x}px`
+    if (patch.y != null) el.style.top  = `${node.layout.y}px`
+    if (patch.height != null) el.style.height = `${node.layout.height}px`
+    if (patch.width != null) el.style.width  = `${node.layout.width}px`
   };
 
   nextNodeId() {
     const ids = this.document.nodes.map(n => Number(n.id) || 0);
     return ids.length ? Math.max(...ids) + 1 : 1;
   };
-
 
   addNode({ type, layout = {}, props = {} }) {
     const id = this.nextNodeId();
@@ -83,5 +102,24 @@ export class BuilderEngine {
 
     this.document.nodes.push(node);
     this.render(node);
+  };
+
+  removeNode(nodeId) {
+    const node = this.findNode(nodeId)
+    if (!node) return;
+
+    const nodeElement = this.findNodeElement(nodeId);
+    nodeElement.remove();
+    this.document.nodes = this.document.nodes.filter(el => el.id !== node.id);
+  };
+
+  triggerContext(nodeId, event) {
+    if (!this.onContext) return;
+
+    this.onContext({
+      nodeId,
+      x: event.clientX,
+      y: event.clientY
+    });
   };
 };
