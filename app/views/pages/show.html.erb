@@ -1,5 +1,11 @@
+
 <div
   id="canvas"
   style="position:relative; width:800px; height:600px;"
   data-controller="builder"
-  data-builder-elements-value="<%= @page.document.to_json %>"></div>
+  data-builder-elements-value="<%= @page.document.to_json %>"
+>
+<button type="button" data-action="click->builder#addNode">
+  add node
+</button>  
+</div>

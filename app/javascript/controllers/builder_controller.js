@@ -6,6 +6,10 @@ export default class extends Controller {
 
   connect() {
     this.engine = new BuilderEngine(this.element, this.elementsValue);
-    this.engine.render();
-  }
+    this.engine.init();
+  };
+
+  addNode() {
+    this.engine.addNode({ type: 'container', props: { 'background-color': 'black' } });
+  };
 };
