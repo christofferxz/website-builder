@@ -1,5 +1,6 @@
 import { attachContext, attachDrag } from "./interactions/index.js";
 import { renderComponent } from "./renderers/index.js"
+import { structure } from "./structure/index.js";
 
 export class BuilderEngine {
   constructor(canvasEl, document, callbacks = {}) {
@@ -26,16 +27,6 @@ export class BuilderEngine {
 
     attachDrag(el, String(node.id), this);
     attachContext(el, String(node.id), this);
-  };
-
-  findNodeElement(nodeId) {
-    const element = this.canvasEl.querySelector(`[data-node-id="${nodeId}"]`);
-
-    if (!element) {
-      return console.log('[error#findNodeElement => Node element not found...');
-    } else {
-      return element;
-    };
   };
 
   findNode(nodeId) {
@@ -83,34 +74,12 @@ export class BuilderEngine {
     return ids.length ? Math.max(...ids) + 1 : 1;
   };
 
-  addNode({ type, layout = {}, props = {} }) {
-    const id = this.nextNodeId();
-
-    const node = {
-      id,
-      type,
-      layout: {
-        x: layout.x ?? 0,
-        y: layout.y ?? 0,
-        width: layout.width ?? 100,
-        height: layout.height ?? 100,
-        rotation: 0,
-        z: this.document.nodes.length + 1
-      },
-      props
-    };
-
-    this.document.nodes.push(node);
-    this.render(node);
+  addNode(args) {
+    structure.addNode(this, args);
   };
 
   removeNode(nodeId) {
-    const node = this.findNode(nodeId)
-    if (!node) return;
-
-    const nodeElement = this.findNodeElement(nodeId);
-    nodeElement.remove();
-    this.document.nodes = this.document.nodes.filter(el => el.id !== node.id);
+    structure.removeNode(this, nodeId);
   };
 
   triggerContext(nodeId, event) {
